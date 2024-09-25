@@ -13,7 +13,7 @@ raen_makeup = col1.file_uploader("Upload Raen makeup:",
 xaela_makeup = col2.file_uploader("Upload Midlander/Xaela makeup:",
                                   type=["png", "dds", "jpg", "jpeg", "bmp"])
 
-textures_only_btn = col1.button("Export Textures", key="textures")
+textures_only_btn = col1.button("Overlay Textures", key="textures")
 
 if textures_only_btn and xaela_makeup and raen_makeup:
     base_folder = os.path.join("base_texture", "face", "diffuse")
