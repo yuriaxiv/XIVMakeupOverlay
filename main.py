@@ -3,7 +3,7 @@ import streamlit as st
 
 from app.overlay_img import process_makeup
 
-st.title("Makeup Modpacker")
+st.title("Au Ra Overlay Program")
 
 col1, col2 = st.columns(2)
 
@@ -21,8 +21,8 @@ if textures_only_btn and xaela_makeup and raen_makeup:
 
     if processed_zip:
         st.download_button(
-            label="Download Processed Textures",
+            label="Download Textures",
             data=processed_zip,
-            file_name="processed_textures.zip",
+            file_name="textures.zip",
             mime="application/zip"
         )
