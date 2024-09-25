@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 
 from app.overlay_img import process_makeup
@@ -16,7 +15,8 @@ xaela_makeup = col2.file_uploader("Upload Midlander/Xaela makeup:",
 textures_only_btn = col1.button("Overlay Textures", key="textures")
 
 if textures_only_btn and xaela_makeup and raen_makeup:
-    base_folder = os.path.join("base_texture", "face", "diffuse")
+    base_folder = "base_texture/face/diffuse"
+
     processed_zip = process_makeup(xaela_makeup, raen_makeup, base_folder)
 
     if processed_zip:
