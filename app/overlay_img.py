@@ -36,14 +36,22 @@ def overlay_images(base, overlay):
 
 def process_makeup(xaela_makeup, raen_makeup, base_folder):
     with tempfile.TemporaryDirectory() as temp_dir:
+        # Open the makeup files and convert them to PNG
         xaela_png = convert_to_png(Image.open(xaela_makeup))
         raen_png = convert_to_png(Image.open(raen_makeup))
-        layer_mask = Image.open(os.path.join('app', 'layer_mask.png'))
+
+        # Check if the layer_mask file exists and use it directly
+        layer_mask_path = 'app/layer_mask.png'
+        if not os.path.exists(layer_mask_path):
+            st.error(f"Error: {layer_mask_path} not found.")
+            return None
+        layer_mask = Image.open(layer_mask_path)
 
         if np.array_equal(np.array(xaela_png), np.array(raen_png)):
             st.error("Error: Xaela and Raen textures are identical. Please tint your makeup to Raen.")
             return None
 
+        # Apply resizing and mask logic
         if xaela_png.width == xaela_png.height:
             xaela_png = xaela_png.crop((0, 0, xaela_png.width // 2, xaela_png.height))
         xaela_png = apply_layer_mask(xaela_png, layer_mask)
@@ -52,7 +60,12 @@ def process_makeup(xaela_makeup, raen_makeup, base_folder):
             raen_png = raen_png.crop((0, 0, raen_png.width // 2, raen_png.height))
         raen_png = apply_layer_mask(raen_png, layer_mask)
 
-        # Step 2: Apply makeup to all subfolders
+        # Process base texture folder
+        if not os.path.exists(base_folder):
+            st.error(f"Error: {base_folder} not found.")
+            return None
+
+        # Processing makeup on all subfolders
         for race_folder in os.listdir(base_folder):
             race_path = os.path.join(base_folder, race_folder)
             if not os.path.isdir(race_path):
@@ -66,26 +79,24 @@ def process_makeup(xaela_makeup, raen_makeup, base_folder):
                         base_image_path = os.path.join(root, file)
                         try:
                             base_image = Image.open(base_image_path)
-
-                            # Apply makeup
                             makeup = raen_png if is_raen else xaela_png
                             result = overlay_images(base_image, makeup)
 
-                            # Save the result
+                            # Save the result in temp folder
                             output_path = os.path.join(temp_dir, os.path.relpath(root, base_folder), file)
                             os.makedirs(os.path.dirname(output_path), exist_ok=True)
                             result.save(output_path, format='PNG')
                         except Exception as e:
                             st.error(f"Error processing {base_image_path}: {str(e)}")
 
-        # Step 3: Process additional overlays for Raen and Xaela folders only
+        # Additional overlay logic for Raen and Xaela
         for race_folder in ['Raen', 'Xaela']:
             race_path = os.path.join(base_folder, race_folder)
             if not os.path.isdir(race_path):
                 continue
 
             for root, dirs, files in os.walk(race_path):
-                subfolder = os.path.basename(root)  # f1, f2, f3, or f4
+                subfolder = os.path.basename(root)
                 overlay_race_folder = os.path.join("overlay_texture", race_folder, subfolder)
 
                 if os.path.exists(overlay_race_folder):
@@ -94,16 +105,14 @@ def process_makeup(xaela_makeup, raen_makeup, base_folder):
                             base_image_path = os.path.join(temp_dir, os.path.relpath(root, base_folder),
                                                            "scaleless_vanilla.png")
 
-                            # Duplicate the base image
                             duplicate_path = os.path.join(temp_dir, os.path.relpath(root, base_folder), overlay_file)
                             shutil.copy2(base_image_path, duplicate_path)
 
-                            # Overlay the texture
                             overlay_image = Image.open(os.path.join(overlay_race_folder, overlay_file))
                             final_result = overlay_images(Image.open(duplicate_path), overlay_image)
                             final_result.save(duplicate_path, format='PNG')
 
-        # Delete scaleless_vanilla.png files
+        # Remove scaleless_vanilla.png files and create the final zip
         for root, dirs, files in os.walk(temp_dir):
             for file in files:
                 if file.lower() == "scaleless_vanilla.png":
@@ -114,7 +123,7 @@ def process_makeup(xaela_makeup, raen_makeup, base_folder):
         with zipfile.ZipFile(zip_path, 'w') as zip_file:
             for root, _, files in os.walk(temp_dir):
                 for file in files:
-                    if file != 'processed_textures.zip':  # Exclude the zip file itself
+                    if file != 'processed_textures.zip':  # Exclude zip itself
                         file_path = os.path.join(root, file)
                         arcname = os.path.relpath(file_path, temp_dir)
                         zip_file.write(file_path, arcname)
